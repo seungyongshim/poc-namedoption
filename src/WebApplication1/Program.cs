@@ -8,13 +8,16 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 
-builder.Services.AddOptions();
 builder.Services.AddOptions<SmtpOption>("SendMail").BindConfiguration("SendMail");
 builder.Services.AddKeyedSingleton<SmtpOption>("SendMail", (sp, key) => sp.GetRequiredService<IOptionsFactory<SmtpOption>>().Create(key as string));
+
+builder.Services.AddSingleton<Hello>();
 
 var app = builder.Build();
 
 var sendmailOption = app.Services.GetRequiredKeyedService<SmtpOption>("SendMail");
+
+var hello = app.Services.GetRequiredService<Hello>();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -22,8 +25,6 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
-
 
 var summaries = new[]
 {
@@ -55,4 +56,10 @@ internal record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary
 internal record SmtpOption
 {
     public string Url { get; init; }
+}
+
+
+internal class Hello([FromKeyedServices("SendMail")] SmtpOption SmtpOption)
+{
+    public string Url => SmtpOption.Url;
 }
